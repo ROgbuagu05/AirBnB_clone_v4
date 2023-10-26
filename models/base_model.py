@@ -9,6 +9,7 @@ from os import getenv
 import sqlalchemy
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.properties import RelationshipProperty
 import uuid
 
 time = "%Y-%m-%dT%H:%M:%S.%f"
@@ -58,17 +59,26 @@ class BaseModel:
         models.storage.new(self)
         models.storage.save()
 
-    def to_dict(self):
+    def to_dict(self, internal=False):
         """returns a dictionary containing all keys/values of the instance"""
-        new_dict = self.__dict__.copy()
-        if "created_at" in new_dict:
-            new_dict["created_at"] = new_dict["created_at"].strftime(time)
-        if "updated_at" in new_dict:
-            new_dict["updated_at"] = new_dict["updated_at"].strftime(time)
-        new_dict["__class__"] = self.__class__.__name__
-        if "_sa_instance_state" in new_dict:
-            del new_dict["_sa_instance_state"]
-        return new_dict
+        ret = {}
+        for key, value in self.__dict__.items():
+            if key == 'created_at':
+                ret['created_at'] = value.strftime(time)
+            elif key == 'updated_at':
+                ret['updated_at'] = value.strftime(time)
+            elif key == 'password' and not internal:
+                continue
+            elif key == '_sa_instance_state':
+                continue
+            elif not (
+                hasattr(type(self), key) and
+                hasattr(getattr(type(self), key), 'prop') and
+                isinstance(getattr(type(self), key).prop, RelationshipProperty)
+            ):
+                ret[key] = value
+        ret['__class__'] = type(self).__name__
+        return ret
 
     def delete(self):
         """delete the current instance from the storage"""
