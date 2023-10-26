@@ -16,9 +16,6 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-classes = {"Amenity": Amenity, "City": City,
-           "Place": Place, "Review": Review, "State": State, "User": User}
-
 
 class DBStorage:
     """interaacts with the MySQL database"""
@@ -42,14 +39,19 @@ class DBStorage:
 
     def all(self, cls=None):
         """query on the current database session"""
-        new_dict = {}
-        for clss in classes:
-            if cls is None or cls is classes[clss] or cls is clss:
-                objs = self.__session.query(classes[clss]).all()
-                for obj in objs:
-                    key = obj.__class__.__name__ + '.' + obj.id
-                    new_dict[key] = obj
-        return (new_dict)
+        if cls is None:
+            ret = {}
+            for name, cls in models.classes.items():
+                if issubclass(cls, Base):
+                    for record in self.__session.query(cls):
+                        ret[name + '.' + record.id] = record
+            return ret
+        if isinstance(cls, type):
+            cls = cls.__name__
+        return {
+            cls + '.' + obj.id: obj
+            for obj in self.__session.query(models.classes[cls])
+        }
 
     def new(self, obj):
         """add the object to the current database session"""
@@ -76,16 +78,18 @@ class DBStorage:
         self.__session.remove()
 
     def get(self, cls, id):
-        """method to retrieve one object"""
-        if cls and id:
-            tempo = cls, __name__ + "." + id
-            count = self.all(cls)
-            for key in count:
-                if key == tempo:
-                    return count[key]
-        else:
-            return None
+        """retrieve a single object from storage"""
+        if not isinstance(cls, type):
+            cls = models.classes[cls]
+        return self.__session.query(cls).filter(cls.id == str(id)).first()
 
     def count(self, cls=None):
-        """class (optional)"""
-        return (len(self.all(cls)))
+        """ Count number of objects in storage."""
+        if cls is not None:
+            return self.__session.query(models.classes[cls]).count()
+        else:
+            return sum(
+                self.__session.query(cls).count()
+                for cls in models.classes.values()
+                if issubclass(cls, Base)
+            )
