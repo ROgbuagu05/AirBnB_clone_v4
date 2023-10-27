@@ -9,7 +9,7 @@ from os import getenv
 
 @app_views.route('/places/<place_id>/amenities', methods=['GET'])
 def get_amenities_place(place_id):
-    """Retrieves list of all Place objects of a City"""
+    """Retrieves the list of all Place objects of a City"""
     place_obj = storage.get("Place", place_id)
     if place_obj is None:
         abort(404)
@@ -28,7 +28,7 @@ def get_amenities_place(place_id):
 @app_views.route('/places/<place_id>/amenities/<amenity_id>',
                  methods=['DELETE'])
 def delete_amenity_place(place_id, amenity_id):
-    """Deletes an Amenity object of a Place"""
+    """Deletes a Amenity object of a Place"""
     place_obj = storage.get("Place", place_id)
     if place_obj is None:
         abort(404)
@@ -54,7 +54,7 @@ def delete_amenity_place(place_id, amenity_id):
 
 @app_views.route('/places/<place_id>/amenities/<amenity_id>', methods=['POST'])
 def post_amenity_place(place_id, amenity_id):
-    """Link an Amenity object to a Place"""
+    """Link a Amenity object to a Place"""
     place_obj = storage.get("Place", place_id)
     if place_obj is None:
         abort(404)
