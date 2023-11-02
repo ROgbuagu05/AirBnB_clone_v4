@@ -1,29 +1,21 @@
-#!/usr/bin/python3
-"""
-initialize the models package
-"""
-
-import importlib
 import os
-import pkgutil
+from models.base_model import BaseModel
+from models.amenity import Amenity
+from models.city import City
+from models.place import Place
+from models.review import Review
+from models.state import State
+from models.user import User
 
+"""CNC - dictionary = { Class Name (string) : Class Type }"""
 
-storage = None
-storage_t = os.getenv("HBNB_TYPE_STORAGE")
-
-classes = pkgutil.iter_modules(__path__)
-classes = (module[1] for module in classes if not module[2])
-classes = ((name.title().replace('_', ''), name) for name in classes)
-classes = (
-    (cls, importlib.import_module('models.' + mod))
-    for cls, mod in classes
-)
-classes = {cls: getattr(mod, cls) for cls, mod in classes}
-
-if storage_t == "db":
-    from models.engine.db_storage import DBStorage
-    storage = DBStorage()
+if os.environ.get('HBNB_TYPE_STORAGE') == 'db':
+    from models.engine import db_storage
+    CNC = db_storage.DBStorage.CNC
+    storage = db_storage.DBStorage()
 else:
-    from models.engine.file_storage import FileStorage
-    storage = FileStorage()
+    from models.engine import file_storage
+    CNC = file_storage.FileStorage.CNC
+    storage = file_storage.FileStorage()
+
 storage.reload()
